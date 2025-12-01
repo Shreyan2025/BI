@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Under Armour BI Dashboard – Market Position</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    :root {
+      --bg-main: #020617;
+      --bg-card: #020617;
+      --bg-card-soft: #020617;
+      --bg-sidebar: #020617;
+      --border-subtle: #1f2937;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.14);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-soft: #6b7280;
+      --danger: #fb7185;
+      --success: #4ade80;
+      --warning: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top left, #0f172a 0, #020617 55%);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #020617 0, #020617 55%, #020617 100%);
+      border-right: 1px solid #111827;
+      padding: 20px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .logo span {
+      color: var(--accent);
+    }
+
+    .tagline {
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    .nav-link {
+      display: block;
+      font-size: 14px;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      border-radius: 999px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .nav-link:hover {
+      background: #020617;
+      color: #f9fafb;
+      border-color: #111827;
+    }
+
+    .nav-link.active {
+      background: var(--accent-soft);
+      color: #e0f2fe;
+      border-color: #0ea5e9;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      font-size: 11px;
+      color: var(--text-soft);
+      border-top: 1px solid #111827;
+      padding-top: 10px;
+      line-height: 1.4;
+    }
+
+    /* Main layout */
+    .main {
+      flex: 1;
+      padding: 20px 24px;
+      max-width: calc(100vw - 260px);
+      overflow-x: hidden;
+    }
+
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-bottom: 16px;
+    }
+
+    /* KPI grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .kpi {
+      background: radial-gradient(circle at top, #0b1120 0, #020617 60%);
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px solid #111827;
+      box-shadow: 0 12px 35px rgba(15,23,42,0.55);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .kpi-trend {
+      font-size: 11px;
+    }
+
+    .kpi-trend.up {
+      color: var(--success);
+    }
+    .kpi-trend.down {
+      color: var(--danger);
+    }
+
+    /* Cards */
+    .card {
+      background: radial-gradient(circle at top left, #020617 0, #020617 65%);
+      border-radius: 18px;
+      padding: 16px 18px 18px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 14px;
+      box-shadow: 0 18px 45px rgba(15,23,42,0.70);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .card-meta {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 10px;
+    }
+
+    .chart {
+      width: 100%;
+      height: 260px;
+    }
+
+    .small-chart {
+      width: 100%;
+      height: 210px;
+    }
+
+    .text-block {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .text-block p + p {
+      margin-top: 8px;
+    }
+
+    .text-block h3 {
+      font-size: 13px;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      color: #e5e7eb;
+    }
+
+    .text-block ul {
+      margin-left: 18px;
+      margin-top: 2px;
+      margin-bottom: 4px;
+    }
+
+    .text-block li {
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 1100px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 840px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+      }
+      .sidebar-footer {
+        display: none;
+      }
+      .main {
+        max-width: 100%;
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+      }
+      .nav-link {
+        display: inline-block;
+        margin-right: 6px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div>
+      <div class="logo">UA<span>BI</span></div>
+      <div class="tagline">Under Armour vs Nike &amp; Adidas • Market Position</div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <span class="nav-link active" data-target="page-dashboard">Dashboard</span>
+      <span class="nav-link" data-target="page-story">Story Behind the Data</span>
+      <span class="nav-link" data-target="page-insights">Insights &amp; Recommendations</span>
+      <span class="nav-link" data-target="page-tech">Technical &amp; AI Notes</span>
+    </div>
+
+    <div class="sidebar-footer">
+      MSc Business Analytics for Decision Makers<br/>
+      Business Intelligence – Final Project
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section id="page-dashboard" class="page active">
+      <div class="page-title">Executive Dashboard</div>
+      <div class="page-subtitle">
+        Market position and competitive benchmarking for Under Armour relative to Nike and Adidas.
+      </div>
+
+      <!-- KPI GRID -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Under Armour FY24 Revenue</div>
+          <div class="kpi-value">$5.70B</div>
+          <div class="kpi-trend down">-3.4% vs FY23</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Nike FY24 Revenue</div>
+          <div class="kpi-value">$51.4B</div>
+          <div class="kpi-trend up">+0.4% vs FY23</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Adidas FY24 Net Sales</div>
+          <div class="kpi-value">€23.7B</div>
+          <div class="kpi-trend up">+10.5% vs FY23</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">UA EBIT Margin FY24</div>
+          <div class="kpi-value">5.4%</div>
+          <div class="kpi-trend up">Up from 4.8%</div>
+        </div>
+      </div>
+
+      <!-- Strategic Summary A -->
+      <div class="card">
+        <div class="card-title">Strategic Summary – Under Armour's Market Position</div>
+        <div class="text-block">
+          <p>
+            Under Armour operates in one of the most competitive global markets, where Nike and Adidas
+            dominate both scale and geographic reach. The KPI and revenue trends highlight a business
+            facing stagnation, with FY24 revenue declining while competitors grew or stabilised. This
+            dashboard synthesises these performance signals with strategic frameworks—including a
+            perceptual map, SWOT analysis, and Porter’s Five Forces—to understand not only
+            <strong>what</strong> is happening, but <strong>why</strong>.
+          </p>
+          <p>
+            The geographic analysis exposes Under Armour’s structural weakness: an overdependence on
+            North America and an underdeveloped presence across APAC and EMEA. This limits growth potential
+            and widens the competitive gap versus Nike and Adidas. Meanwhile, the competitive positioning
+            visual shows Under Armour in a <strong>mid-price, high-performance</strong> segment—squeezed between
+            premium performance brands like Nike and On, and lifestyle-driven competitors like Adidas,
+            Puma, and Lululemon.
+          </p>
+          <p>
+            Combining dashboard data with SWOT and Five Forces reveals the strategic gap: strong
+            performance credibility but insufficient differentiation, scale, and global reach. The insights
+            that follow set the foundation for strategic recommendations to elevate UA’s global
+            competitiveness.
+          </p>
+        </div>
+      </div>
+
+      <!-- Revenue Trend -->
+      <div class="card">
+        <div class="card-title">Revenue Trend (2022–2024)</div>
+        <div id="rev_chart" class="chart"></div>
+      </div>
+
+      <!-- EBIT Margin -->
+      <div class="card">
+        <div class="card-title">EBIT Margin Comparison</div>
+        <div id="ebit_chart" class="small-chart"></div>
+      </div>
+
+      <!-- YoY -->
+      <div class="card">
+        <div class="card-title">YoY Revenue Growth (2023–2024)</div>
+        <div id="yoy_chart" class="small-chart"></div>
+      </div>
+
+      <!-- Normalised Revenue Index -->
+      <div class="card">
+        <div class="card-title">Normalised Revenue Index (2022 = 100)</div>
+        <div id="index_rev_chart" class="small-chart"></div>
+      </div>
+
+      <!-- Market Share -->
+      <div class="card">
+        <div class="card-title">FY24 Revenue Share (Market Scale Proxy)</div>
+        <div id="share_pie_chart" class="small-chart"></div>
+      </div>
+
+      <!-- Geographic Comparison -->
+      <div class="card">
+        <div class="card-title">Geographic Presence Comparison</div>
+        <div class="card-meta">Regional revenue mix – a key driver of market reach.</div>
+        <div id="geo_chart" class="small-chart"></div>
+      </div>
+
+      <!-- Perceptual Map -->
+      <div class="card">
+        <div class="card-title">Competitive Positioning Map</div>
+        <div class="card-meta">
+          Perceived price level vs performance credibility across key competitors.
+        </div>
+        <div id="positioning_chart" class="small-chart"></div>
+      </div>
+
+      <!-- Stock Prices (simple annual view; you can replace with monthly series from your CSV) -->
+      <div class="card">
+        <div class="card-title">3-Year Stock Price Comparison (Illustrative)</div>
+        <div class="card-meta">
+          Annual closing prices (native currencies). Replace series with values from your stock CSV for full precision.
+        </div>
+        <div id="stock_chart" class="chart"></div>
+      </div>
+
+    </section>
+
+    <!-- STORY BEHIND THE DATA -->
+    <section id="page-story" class="page">
+      <div class="page-title">Story Behind the Data</div>
+      <div class="page-subtitle">Connecting the numbers to the narrative.</div>
+
+      <div class="card">
+        <div class="card-title">From Growth to Stagnation</div>
+        <div class="text-block">
+          <p>
+            The data shows that Under Armour has moved from a growth story to a stabilisation story while
+            key competitors continued to scale. Between 2022 and 2024, Nike and Adidas maintained or
+            regained revenue growth, whereas Under Armour experienced a revenue decline in FY24 despite
+            margin improvements.
+          </p>
+          <p>
+            This suggests that operational efficiency alone is not enough. In a market driven by scale,
+            brand heat, and distribution breadth, Under Armour’s more limited footprint and mid-tier brand
+            perception constrain its ability to convert performance credibility into sustained growth.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Why Geography Matters</div>
+        <div class="text-block">
+          <p>
+            The geographic revenue chart highlights a structural imbalance: Under Armour generates roughly
+            two-thirds of its revenue from North America, whereas Nike and Adidas derive a far greater
+            share from international markets. This is critical because the fastest-growing demand for
+            athletic apparel and footwear is in APAC and parts of EMEA.
+          </p>
+          <p>
+            By remaining heavily concentrated in one region, Under Armour not only misses growth
+            opportunities but also increases its exposure to local macroeconomic slowdowns and competitive
+            saturation. Geography, therefore, is not just a descriptive metric—it is a strategic risk
+            factor.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Positioning in a Crowded Field</div>
+        <div class="text-block">
+          <p>
+            The competitive positioning map shows how Under Armour sits relative to Nike, Adidas, Puma,
+            Lululemon and On. While UA is recognised for performance, it operates at a mid-price point and
+            lacks the premium halo of Nike or the lifestyle appeal of Adidas and Lululemon.
+          </p>
+          <p>
+            This “middle of the matrix” positioning limits pricing power and makes it easier for consumers
+            to trade up to premium brands or down to value options without perceiving a major loss in
+            performance. It is a key reason why Under Armour’s financial performance lags peers despite a
+            credible product offering.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSIGHTS & RECOMMENDATIONS -->
+    <section id="page-insights" class="page">
+      <div class="page-title">Insights &amp; Recommendations</div>
+
+      <!-- Strategic Summary D -->
+      <div class="card">
+        <div class="card-title">Strategic Summary – Interpreting Under Armour’s Competitive Reality</div>
+        <div class="text-block">
+          <p>
+            The dashboard highlights a brand facing moderate operational performance but increasing
+            strategic pressure. FY24 revenue declined for Under Armour while Nike stabilised and Adidas
+            achieved a strong rebound. Combined with the stock performance view, the data signals that
+            Under Armour is losing momentum in a market where competitors are pulling ahead.
+          </p>
+          <p>
+            The geographic footprint further explains this underperformance: Under Armour remains heavily
+            reliant on North America for growth, limiting exposure to high-potential regions such as APAC
+            and EMEA. This imbalance reduces brand visibility and restricts long-term growth potential.
+          </p>
+          <p>
+            The Perceptual Map reveals a deeper issue: Under Armour occupies a <strong>mid-price,
+            high-performance</strong> position, squeezed between premium performance brands like Nike and On,
+            and lifestyle-performance brands such as Adidas, Puma, and Lululemon. This limits pricing power
+            and dilutes brand relevance in emerging segments.
+          </p>
+          <p>
+            SWOT analysis confirms strong performance credibility but highlights weaknesses in innovation
+            pace, global reach, and brand positioning. Meanwhile, Porter’s Five Forces illustrates the
+            structural intensity of the industry—high rivalry, high buyer power, and increasing pressure from
+            niche premium players—magnifying the strategic challenges for Under Armour.
+          </p>
+          <p>
+            The recommendations that follow translate these insights into actionable strategies designed to
+            improve Under Armour’s competitive position, brand relevance, and long-term growth trajectory.
+          </p>
+        </div>
+      </div>
+
+      <!-- SWOT -->
+      <div class="card">
+        <div class="card-title">SWOT Summary – Under Armour</div>
+        <div class="text-block">
+          <h3>Strengths</h3>
+          <ul>
+            <li>Strong credibility in performance and training categories, especially in North America.</li>
+            <li>Improving EBIT margin despite top-line pressure in FY24.</li>
+            <li>Recognisable brand with established presence in US retail and team sports.</li>
+            <li>Growing direct-to-consumer and digital channels that can enhance margins and data insight.</li>
+          </ul>
+
+          <h3>Weaknesses</h3>
+          <ul>
+            <li>Negative revenue growth in FY24 while Adidas rebounds and Nike stabilises.</li>
+            <li>Over-dependence on North America; under-penetration in APAC and EMEA.</li>
+            <li>Smaller marketing and R&amp;D budgets than Nike and Adidas, limiting brand salience.</li>
+            <li>Less clear brand positioning versus competitors, with weaker lifestyle appeal.</li>
+          </ul>
+
+          <h3>Opportunities</h3>
+          <ul>
+            <li>Expansion into high-growth regions (APAC, parts of EMEA) with performance-led propositions.</li>
+            <li>Rising demand for performance-led athleisure where UA’s training DNA can differentiate.</li>
+            <li>Scaling women’s and youth segments with targeted product ranges and storytelling.</li>
+            <li>Further growth in DTC to build first-party data, higher margins, and stronger brand control.</li>
+          </ul>
+
+          <h3>Threats</h3>
+          <ul>
+            <li>Intense competition from Nike and Adidas, who dominate share of voice and market scale.</li>
+            <li>Premium challengers such as Lululemon and On capturing high-end and niche performance consumers.</li>
+            <li>Wholesale/retail dependency leading to price pressure and volatile demand.</li>
+            <li>Macro headwinds (inflation, changing discretionary spend) impacting sportswear demand.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Five Forces -->
+      <div class="card">
+        <div class="card-title">Porter’s Five Forces – Athletic Apparel &amp; Footwear</div>
+        <div class="text-block">
+          <h3>Competitive Rivalry – <span style="color:#fb7185;">High</span></h3>
+          <p>
+            Nike and Adidas dominate the market, with Puma, Lululemon, On, New Balance and others
+            competing aggressively on innovation, endorsements and marketing. Under Armour must fight for
+            share of mind and shelf space in every major category.
+          </p>
+
+          <h3>Threat of New Entrants – <span style="color:#f97316;">Medium–Low</span></h3>
+          <p>
+            Building a credible global sportswear brand requires scale, capital and long-term brand
+            investment. While new niche players can emerge (e.g. On, Hoka), few can quickly match the
+            distribution and endorsement assets of existing leaders.
+          </p>
+
+          <h3>Threat of Substitutes – <span style="color:#facc15;">Medium</span></h3>
+          <p>
+            Consumers can switch to fashion brands, fast-fashion athleisure or generic sportswear. For
+            serious performance users, however, branded technical gear still matters, which partially protects
+            established performance brands like Under Armour.
+          </p>
+
+          <h3>Bargaining Power of Buyers – <span style="color:#fb7185;">High</span></h3>
+          <p>
+            End customers are highly informed, price sensitive and able to compare options instantly online.
+            Retail partners also exert power over promotions and assortments, putting pressure on Under
+            Armour’s pricing and margins.
+          </p>
+
+          <h3>Bargaining Power of Suppliers – <span style="color:#38bdf8;">Medium</span></h3>
+          <p>
+            UA relies on manufacturing partners in a limited number of regions. While there are multiple
+            suppliers, factors such as capacity, labour costs and logistics disruptions can increase input
+            costs. Larger brands may negotiate more favourable terms.
+          </p>
+        </div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="card">
+        <div class="card-title">Strategic Recommendations</div>
+        <div class="text-block">
+          <h3>1. Sharpen Premium Performance Positioning</h3>
+          <p>
+            Move Under Armour away from the crowded mid-price middle by elevating design, innovation and
+            storytelling—especially in footwear and women’s performance apparel. The goal is to shift the
+            brand up and to the right on the perceptual map.
+          </p>
+
+          <h3>2. Expand Internationally with Focused Bets</h3>
+          <p>
+            Prioritise APAC and selected EMEA markets where performance categories are growing fastest.
+            Partner with key retailers, athletes and teams to build credibility while leveraging DTC to
+            control brand experience.
+          </p>
+
+          <h3>3. Accelerate Direct-to-Consumer</h3>
+          <p>
+            Invest in digital platforms, membership programmes and own stores to deepen relationships,
+            improve margins and de-risk the wholesale-heavy model highlighted in the Five Forces analysis.
+          </p>
+
+          <h3>4. Win in Women’s &amp; Youth Segments</h3>
+          <p>
+            Use data and market research to design collections specifically for women and younger consumers,
+            supported by targeted campaigns and athlete partnerships. This addresses both growth and brand
+            relevance gaps.
+          </p>
+
+          <h3>5. Build a Focused Innovation Pipeline</h3>
+          <p>
+            Concentrate R&amp;D on a few hero platforms (e.g. training footwear, cushioning systems, smart
+            apparel) rather than thinly spreading resources. Measurable innovation will help UA compete
+            more effectively with Nike and emerging players like On.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TECH NOTES -->
+    <section id="page-tech" class="page">
+      <div class="page-title">Technical &amp; AI Notes</div>
+      <div class="page-subtitle">How the data was prepared and how AI was used.</div>
+
+      <div class="card">
+        <div class="card-title">Data Sources &amp; Preparation</div>
+        <div class="text-block">
+          <ul>
+            <li>Financial data (revenue, EBIT, YoY, geographic splits) extracted from FY22–FY24 annual reports and 10-K filings for Under Armour, Nike and Adidas.</li>
+            <li>Numbers were compiled into a consolidated CSV file and loaded into Python for cleaning and validation.</li>
+            <li>YoY growth and normalised revenue index values were derived programmatically to ensure consistency.</li>
+            <li>Stock price data was compiled separately from public market data sources and can be linked to this dashboard for extended analysis.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Dashboard &amp; AI Support</div>
+        <div class="text-block">
+          <ul>
+            <li>The dashboard is built in pure HTML, CSS and JavaScript using Plotly.js for interactive visualisations.</li>
+            <li>AI tools (such as ChatGPT) were used to assist with code scaffolding, narrative structuring and framework articulation, but all data values were cross-checked against original company filings.</li>
+            <li>The strategic frameworks (SWOT, Five Forces, positioning map) synthesise numerical insights with industry research to provide a coherent, decision-focused view for management.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- INTERACTION + CHARTS -->
+  <script>
+    // Navigation
+    document.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", () => {
+        const target = link.getAttribute("data-target");
+
+        document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+        link.classList.add("active");
+
+        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+        document.getElementById(target).classList.add("active");
+      });
+    });
+
+    // ---------- DATA ARRAYS ----------
+    const years = [2022, 2023, 2024];
+
+    // Revenue (billions)
+    const uaRev = [5.683, 5.900, 5.702];
+    const nikeRev = [46.71, 51.20, 51.40];
+    const adidasRev = [22.511, 21.427, 23.683];
+
+    // EBIT margin (%)
+    const uaEbit = [8.5, 8.1, 9.5];
+    const nikeEbit = [12.9, 10.7, 11.9];
+    const adidasEbit = [9.6, 1.2, 6.9];
+
+    // YoY revenue growth (%)
+    const yoyYears = [2023, 2024];
+    const uaYoy = [3.8, -3.4];
+    const nikeYoy = [9.6, 0.4];
+    const adidasYoy = [-4.8, 10.5];
+
+    // Normalised revenue index (2022 = 100)
+    function normalise(base, series) {
+      return series.map(v => Math.round((v / base) * 100));
+    }
+    const uaIndex = normalise(uaRev[0], uaRev);
+    const nikeIndex = normalise(nikeRev[0], nikeRev);
+    const adidasIndex = normalise(adidasRev[0], adidasRev);
+
+    // Market share FY24 proxy (%)
+    const shareLabels = ["Nike", "Adidas (approx USD)", "Under Armour"];
+    const shareValues = [61.8, 31.3, 6.9];
+
+    // Geographic splits (% of revenue)
+    const companies = ["Under Armour", "Nike", "Adidas"];
+    const regionNA = [67, 44, 24];
+    const regionEMEA = [21, 29, 38];
+    const regionAPAC = [12, 21, 28];
+    const regionLATAM = [0, 6, 10];
+
+    // Stock data – simple annual end-of-year values (illustrative)
+    const stockYears = ["2022", "2023", "2024"];
+    const stockUA = [10.2, 8.3, 6.5];
+    const stockNike = [118, 130, 125];
+    const stockAdidas = [140, 125, 170];
+
+    // ---------- REVENUE CHART ----------
+    Plotly.newPlot("rev_chart", [
+      {
+        x: years,
+        y: uaRev,
+        name: "Under Armour",
+        type: "scatter",
+        mode: "lines+markers"
+      },
+      {
+        x: years,
+        y: nikeRev,
+        name: "Nike",
+        type: "scatter",
+        mode: "lines+markers"
+      },
+      {
+        x: years,
+        y: adidasRev,
+        name: "Adidas",
+        type: "scatter",
+        mode: "lines+markers"
+      }
+    ], {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, r: 10, l: 40, b: 40 },
+      xaxis: { title: "Year", gridcolor: "#1f2937" },
+      yaxis: { title: "Revenue (Billion)", gridcolor: "#1f2937" },
+      legend: { orientation: "h", x: 0, y: -0.2 }
+    });
+
+    // ---------- EBIT MARGIN ----------
+    Plotly.newPlot("ebit_chart", [
+      { x: years, y: uaEbit, name: "Under Armour", type: "bar" },
+      { x: years, y: nikeEbit, name: "Nike", type: "bar" },
+      { x: years, y: adidasEbit, name: "Adidas", type: "bar" }
+    ], {
+      barmode: "group",
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, r: 10, l: 40, b: 40 },
+      xaxis: { title: "Year", gridcolor: "#1f2937" },
+      yaxis: { title: "EBIT Margin (%)", gridcolor: "#1f2937" },
+      legend: { orientation: "h", x: 0, y: -0.2 }
+    });
+
+    // ---------- YOY GROWTH ----------
+    Plotly.newPlot("yoy_chart", [
+      { x: yoyYears, y: uaYoy, name: "Under Armour", type: "bar" },
+      { x: yoyYears, y: nikeYoy, name: "Nike", type: "bar" },
+      { x: yoyYears, y: adidasYoy, name: "Adidas", type: "bar" }
+    ], {
+      barmode: "group",
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, r: 10, l: 40, b: 40 },
+      xaxis: { title: "Year", gridcolor: "#1f2937" },
+      yaxis: { title: "YoY Revenue Growth (%)", gridcolor: "#1f2937" },
+      legend: { orientation: "h", x: 0, y: -0.2 }
+    });
+
+    // ---------- REVENUE INDEX ----------
+    Plotly.newPlot("index_rev_chart", [
+      { x: years, y: uaIndex, name: "Under Armour", type: "scatter", mode: "lines+markers" },
+      { x: years, y: nikeIndex, name: "Nike", type: "scatter", mode: "lines+markers" },
+      { x: years, y: adidasIndex, name: "Adidas", type: "scatter", mode: "lines+markers" }
+    ], {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, r: 10, l: 40, b: 40 },
+      xaxis: { title: "Year", gridcolor: "#1f2937" },
+      yaxis: { title: "Index (2022 = 100)", gridcolor: "#1f2937" },
+      legend: { orientation: "h", x: 0, y: -0.2 }
+    });
+
+    // ---------- SHARE PIE ----------
+    Plotly.newPlot("share_pie_chart", [{
+      labels: shareLabels,
+      values: shareValues,
+      type: "pie",
+      hole: 0.5
+    }], {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, b: 10 },
+      legend: { orientation: "h", x: 0, y: -0.2 }
+    });
+
+    // ---------- GEO CHART ----------
+    Plotly.newPlot("geo_chart", [
+      { x: companies, y: regionNA, name: "North America", type: "bar" },
+      { x: companies, y: regionEMEA, name: "EMEA", type: "bar" },
+      { x: companies, y: regionAPAC, name: "APAC", type: "bar" },
+      { x: companies, y: regionLATAM, name: "LATAM", type: "bar" }
+    ], {
+      barmode: "stack",
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, r: 10, l: 40, b: 40 },
+      xaxis: { title: "Company", gridcolor: "#1f2937" },
+      yaxis: { title: "Revenue Mix (%)", gridcolor: "#1f2937" },
+      legend: { orientation: "h", x: 0, y: -0.2 }
+    });
+
+    // ---------- COMPETITIVE POSITIONING (PERCEPTUAL MAP) ----------
+    const brands = ["Under Armour", "Nike", "Adidas", "Puma", "Lululemon", "On"];
+    const priceIndex = [3, 4, 3, 2, 5, 5];       // 1 = budget, 5 = premium
+    const perfIndex = [4, 5, 3, 2, 3, 5];        // 1 = lifestyle, 5 = high performance
+
+    Plotly.newPlot("positioning_chart", [{
+      x: priceIndex,
+      y: perfIndex,
+      mode: "markers+text",
+      type: "scatter",
+      text: brands,
+      textposition: "top center",
+      marker: { size: 14, opacity: 0.9 }
+    }], {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, r: 10, l: 40, b: 40 },
+      xaxis: {
+        title: "Price Level (Affordable → Premium)",
+        range: [1, 5.5],
+        dtick: 1,
+        gridcolor: "#1f2937"
+      },
+      yaxis: {
+        title: "Performance Credibility (Lifestyle → High Performance)",
+        range: [1, 5.5],
+        dtick: 1,
+        gridcolor: "#1f2937"
+      }
+    });
+
+    // ---------- STOCK CHART (annual; you can swap with monthly series) ----------
+    Plotly.newPlot("stock_chart", [
+      { x: stockYears, y: stockUA, name: "UAA (Under Armour)", type: "scatter", mode: "lines+markers" },
+      { x: stockYears, y: stockNike, name: "NKE (Nike)", type: "scatter", mode: "lines+markers" },
+      { x: stockYears, y: stockAdidas, name: "ADS.DE (Adidas)", type: "scatter", mode: "lines+markers" }
+    ], {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "#020617",
+      margin: { t: 10, r: 10, l: 40, b: 40 },
+      xaxis: { title: "Year", gridcolor: "#1f2937" },
+      yaxis: { title: "Price (native currency, illustrative)", gridcolor: "#1f2937" },
+      legend: { orientation: "h", x: 0, y: -0.2 }
+    });
+  </script>
+</body>
+</html>
